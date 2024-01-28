@@ -12,12 +12,12 @@ from flask_socketio import SocketIO
 from datetime import datetime
 import requests
 from flask_cors import CORS
+import jwt
 
 
-
-ENV_FILE = find_dotenv()
-if ENV_FILE:
-    load_dotenv(ENV_FILE)
+# ENV_FILE = find_dotenv()
+# if ENV_FILE:
+#     load_dotenv(ENV_FILE)
 
 
 
@@ -36,55 +36,55 @@ def handle_disconnect():
     print('Client disconnected')
 
 
-oauth = OAuth(app)
+# # oauth = OAuth(app)
 
-oauth.register(
-    "auth0",
-    client_id=env.get("AUTH0_CLIENT_ID"),
-    client_secret=env.get("AUTH0_CLIENT_SECRET"),
-    client_kwargs={
-        "scope": "openid profile email",
-    },
-    server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
-)
+# # oauth.register(
+# #     "auth0",
+# #     client_id=env.get("AUTH0_CLIENT_ID"),
+# #     client_secret=env.get("AUTH0_CLIENT_SECRET"),
+# #     client_kwargs={
+# #         "scope": "openid profile email",
+# #     },
+# #     server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
+# # )
 
-print(f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration')
+# # print(f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration')
 
-@app.route("/login")
-def login():
-    return oauth.auth0.authorize_redirect(
-        redirect_uri=url_for("callback", _external=True)
-    )
+# # @app.route("/login")
+# # def login():
+# #     return oauth.auth0.authorize_redirect(
+# #         redirect_uri=url_for("callback", _external=True)
+# #     )
 
-@app.route("/callback", methods=["GET", "POST"])
-def callback():
-    token = oauth.auth0.authorize_access_token()
-    session["user"] = token
-    print("token", token)
-    return redirect("/")
+# # @app.route("/callback", methods=["GET", "POST"])
+# # def callback():
+# #     token = oauth.auth0.authorize_access_token()
+# #     session["user"] = token
+# #     print("token", token)
+# #     return redirect("/")
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(
-        "https://" + env.get("AUTH0_DOMAIN")
-        + "/v2/logout?"
-        + urlencode(
-            {
-                "returnTo": url_for("home", _external=True),
-                "client_id": env.get("AUTH0_CLIENT_ID"),
-            },
-            quote_via=quote_plus,
-        )
-    )
+# # @app.route("/logout")
+# # def logout():
+# #     session.clear()
+# #     return redirect(
+# #         "https://" + env.get("AUTH0_DOMAIN")
+# #         + "/v2/logout?"
+# #         + urlencode(
+# #             {
+# #                 "returnTo": url_for("home", _external=True),
+# #                 "client_id": env.get("AUTH0_CLIENT_ID"),
+# #             },
+# #             quote_via=quote_plus,
+# #         )
+# #     )
 
 
-@app.route("/")
-def home():
-    if "user" not in session:
-        # Redirect to the login page
-        return redirect(url_for("login"))
-    return render_template("index.html", session=session.get('user'), pretty=json.dumps(session.get('user'), indent=4))
+# @app.route("/")
+# def home():
+#     if "user" not in session:
+#         # Redirect to the login page
+#         return redirect(url_for("login"))
+#     return render_template("index.html", session=session.get('user'), pretty=json.dumps(session.get('user'), indent=4))
 
 
 
@@ -112,21 +112,30 @@ if "users" in collist:
   print("users exists.")
 
 
-# mydict = {"name": "lissan", 
-#           "email": "lissan@example.com",
-#           "profile-pic":"lissan.png",
-#           "pictures":["pic1.png", "pic2.png", "pic3.png"],
-#           "gender":"male",
-#           "who-liked-them":["oleg@example.com"],
-#           "seen":["lissan@example.com"],
-#           "messages":{}
-#           }
+mydict = {"name": "lissan", 
+          "email": "lissan@example.com",
+          "profile-pic":"lissan.png",
+          "bio":"I am a cool guy",
+          "Year": "1",
+          "Course": "Computer Science",
+          "pictures":["pic1.png", "pic2.png", "pic3.png"],
+          "gender":"male",
+          "who-liked-them":["oleg@example.com"],
+          "seen":["lissan@example.com"],
+          "messages":{}
+          }
+
+x = mycol.insert_one(mydict)
 
 
-# x = mycol.insert_one(mydict)
+places_for_dates = {
+   "kcl.ac.uk": [{"Strand Campus":0.9, "Waterloo Campus":0.4, "Guy's Campus":0.6, "Denmark Hill Campus":0.7}],
+   "soton.ac.uk": [{"Highfield Campus":0.9, "Avenue Campus":0.4, "Boldrewood Campus":0.6, "Winchester Campus":0.7}],
+}
 
-# print("inserted")
-# print(x.inserted_id)
+
+print("inserted")
+print(x.inserted_id)
 
 
 def check_email_exists(email):
@@ -215,18 +224,18 @@ def send_message():
         if other in messages:
             for message in messages:
                 if message == other:
-                    messages[message].append([str(datetime.now().hour) + ":" + str(datetime.now().minute), sent_message, True])
+                    messages[message].append([str(datetime.now().strftime('%H:%M')), sent_message, True])
                     mycol.update_one({"email": user}, {"$set": {"messages": messages}})
                     did_something = True
                     print("did 1")
         else:
             existing_messages = messages
-            existing_messages[other] = [[str(datetime.now().hour) + ":" + str(datetime.now().minute), sent_message, True]]
+            existing_messages[other] = [[str(datetime.now().strftime('%H:%M')), sent_message, True]]
             mycol.update_one({"email": user}, {"$set": {"messages": existing_messages}})
             did_something = True
 
     did_something = False
-       
+    
     reciever_user = mycol.find({"email": other})
     print("reciever_user", reciever_user)
     for i in reciever_user:
@@ -234,13 +243,13 @@ def send_message():
         if user in messages:
             for message in messages:
                 if message == user:
-                    messages[message].append([str(datetime.now().hour) + ":" + str(datetime.now().minute), sent_message, False])
+                    messages[message].append([str(datetime.now().strftime('%H:%M')), sent_message, False])
                     mycol.update_one({"email": other}, {"$set": {"messages": messages}})
                     did_something = True
                     print("did 2")
         else:
             existing_messages = messages
-            existing_messages[user] = [[str(datetime.now().hour) + ":" + str(datetime.now().minute), sent_message, False]]
+            existing_messages[user] = [[str(datetime.now().strftime('%H:%M')), sent_message, False]]
             did_something = True
            
         
@@ -284,4 +293,24 @@ def send_media(path):
     return send_from_directory("media", path)
 
 
-app.run(host='0.0.0.0', port=8050, debug=False)
+@app.route("/give-me-email")
+def give_me_email():
+    jwt_code = request.args.get("jwt")
+    decoded_jwt = jwt.decode(jwt_code, options={"verify_signature": False})
+    print(decoded_jwt)
+    return decoded_jwt["email"]
+
+
+@app.route("/upload-image", methods=["POST"])
+def upload_image():
+    print(request.files)
+    file = request.files['file']
+    print(file)
+    file.save("media/" + file.filename)
+    return "OK"
+
+
+
+# app.run(host='0.0.0.0', port=8050, debug=False)
+
+socketio.run(app, host='0.0.0.0', debug=False, port=8050)
