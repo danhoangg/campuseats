@@ -155,7 +155,8 @@ def insert_user_db(user_info):
     mydict["messages"] = {}
     mydict["pictures"] = []
     mydict["who-liked-them"] = []
-    mydict["seen"] = []
+    mydict["disliked"] = []
+    mydict["liked"] = []
 
 
 # mydict = {"name": "lissan", 
@@ -369,6 +370,7 @@ def upload_file():
 
 @app.route("/recommendations", methods=["GET"])
 def recommendations():
+    print("recommendations")
     email = request.args.get("email")
     users = mycol.find()
     all_emails = []
@@ -380,28 +382,70 @@ def recommendations():
 
     users = mycol.find({"email": email})
     for user in users:
-        disliked = user["disliked"]
+        print("liked", user["liked"])
+        disliked = user["disliked"] + user["liked"]
         print("disliked", disliked)
         for email in disliked:
-            print("email", email[0])
-            all_emails.remove(email[0])
+            print("email", email)
+            try:
+                all_emails.remove(email)
+            except:
+                pass
+    
+    if len(all_emails) == 0:
+        return "No recommendations", 404
 
-    return str(all_emails)
+    users = mycol.find({"email": all_emails[0]})
+    for i in users:
+        del i["_id"]
+        return json.dumps(i)
 
 
 
 @app.route("/i-like", methods=["GET"])
 def i_like():
     who_liked = request.args.get("email")
+    print("who_liked", who_liked)
 
     liked = request.args.get("liked")
 
     liked_user = mycol.find({"email": liked})
     for i in liked_user:
-       liked = i["who-liked-them"]
-       liked.append(who_liked)
+       liked_user_who_liked_them = i["who-liked-them"]
+       liked_user_who_liked_them.append(who_liked)
        
-    mycol.update_one({"email": liked}, {"$push": {"who-liked-them": liked}})
+    mycol.update_one({"email": liked}, {"$set": {"who-liked-them": liked_user_who_liked_them}})
+
+
+    # CHECK IF THEY BOTH LIKED EACH OTHER, IF SO ADD EACH OTHER TO MESSAGES
+    user = mycol.find({"email": who_liked})
+    # add liked person to who liked messages
+    for i in user:
+        liked_person = i["who-liked-them"]
+        messages = i["messages"]
+
+        user_liked = i["liked"]
+        user_liked.append(liked)
+        mycol.update_one({"email": who_liked}, {"$set": {"liked": user_liked}})
+
+        print("liked_person", liked_person)
+        if liked in liked_person:
+            print("SUCESS")
+            # THIS MEAN THEY BOTH LIKE EACHER OTHER
+
+            # SO NOW PUT EACH OTHER IN THEIR MESSAGES
+
+            messages[liked] = [[]]
+            mycol.update_one({"email": who_liked}, {"$set": {"messages": messages}})
+
+            # add who liked to liked person messages
+            user = mycol.find({"email": liked})
+            for i in user:
+                messages = i["messages"]
+                messages[who_liked] = [[]]
+                mycol.update_one({"email": liked}, {"$set": {"messages": messages}})
+
+    return "OK"
 
 
 @app.route("/disliked", methods=["GET"])
@@ -415,7 +459,7 @@ def disliked():
        disliked_list = i["disliked"]
        disliked_list.append(disliked)
 
-    mycol.update_one({"email": email}, {"$push": {"disliked": disliked_list}})
+    mycol.update_one({"email": email}, {"$set": {"disliked": disliked_list}})
 
     return "OK"
 
