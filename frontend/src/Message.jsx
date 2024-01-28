@@ -6,7 +6,7 @@ const Message = (props) => {
 
     return (
         <div className={`${messageStyle} my-4`}>
-            <span className={`${messageColor} inline-block rounded-3xl bg-gray-300 py-3 px-5 max-w-lg break-words text-xl`}>
+            <span className={`${messageColor} inline-block rounded-3xl py-3 px-5 max-w-lg break-words text-xl`}>
                 {props.text}
             </span>
             <p className='text-sm mr-4'>{props.time}</p>

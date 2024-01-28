@@ -1,5 +1,7 @@
 import React from 'react';
 
+import LogoutButton from './LogoutButton';
+
 const Navbar = () => {
     return (
         <nav className="bg-red-400 text-white shadow-lg top-0 sticky">
@@ -14,11 +16,12 @@ const Navbar = () => {
                             <div className="ml-10 flex items-baseline space-x-4">
                                 <a href="/matching" className="text-gray-300 hover:bg-red-400 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Matching</a>
                                 <a href="/matches" className="text-gray-300 hover:bg-red-400 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Matches</a>
+                                <a href="/profile" className="text-gray-300 hover:bg-red-400 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Profile</a>
                             </div>
                         </div>
                     </div>
                     <div className='flex items-center'>
-                        <a href="#">Logout</a> {/* Login/logout depending on signin */}
+                        <LogoutButton />
                     </div>
                     {/* Mobile menu button */}
                     <div className="mr-2 flex md:hidden">

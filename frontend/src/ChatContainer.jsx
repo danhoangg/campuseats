@@ -1,28 +1,62 @@
-import react, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import Contact from './Contact';
 import Message from './Message';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const ChatContainer = () => {
-    var user = 'dan@example.com'
+    const { getIdTokenClaims } = useAuth0();
+    const [idToken, setIdToken] = useState('');
+    const [user, setUser] = useState('');
 
+    useEffect(() => {
+        const fetchIdToken = async () => {
+            try {
+                const idTokenClaims = await getIdTokenClaims();
+                setIdToken(idTokenClaims.__raw);
+            } catch (error) {
+                console.error('Error getting ID token', error);
+            }
+        };
+
+        fetchIdToken();
+    }, [getIdTokenClaims]);
+
+    useEffect(() => {
+        fetch(`http://lissan.dev:8050/give-me-email?jwt=${idToken}`)
+            .then(res => res.json())
+            .then(res => setUser(res.email))
+    }, [idToken])
+    
     const [selected, setSelected] = useState(null);
     const [messages, setMessages] = useState([])
     const [currentMessage, setCurrentMessage] = useState('')
     const [contacts, setContacts] = useState([])
+    const [trigger, setTrigger] = useState(false)
 
     useEffect(() => {
+        if (user == '') return;
         fetch(`http://lissan.dev:8050/contact-list?user=${user}`)
             .then(res => res.json())
             .then(data => setContacts(data.contact_list))
-    }, [])
+    }, [user])
 
     useEffect(() => {
-        if (selected == null) return;
+        if (selected == null || user == '') return;
         let receiver = contacts[selected][0]
         fetch(`http://lissan.dev:8050/messages?user=${user}&other=${receiver}`)
             .then(res => res.json())
             .then(data => setMessages(data.messages))
-    }, [selected])
+    }, [selected, user, trigger])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTrigger(prevTrigger => !prevTrigger)
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
 
     const endOfListRef = useRef(null);
     const scrollToBottom = () => {
