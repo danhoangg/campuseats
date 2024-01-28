@@ -13,7 +13,7 @@ from datetime import datetime
 import requests
 from flask_cors import CORS
 import jwt
-
+import os
 
 # ENV_FILE = find_dotenv()
 # if ENV_FILE:
@@ -88,8 +88,6 @@ def handle_disconnect():
 
 
 
-
-
 myclient = pymongo.MongoClient("mongodb+srv://admin:admin@dating-app.5bmxqgt.mongodb.net/?retryWrites=true&w=majority")
 print("this")
 
@@ -112,21 +110,24 @@ if "users" in collist:
   print("users exists.")
 
 
-mydict = {"name": "lissan", 
-          "email": "lissan@example.com",
-          "profile-pic":"lissan.png",
-          "bio":"I am a cool guy",
-          "Year": "1",
-          "Course": "Computer Science",
-          "pictures":["pic1.png", "pic2.png", "pic3.png"],
-          "gender":"male",
-          "who-liked-them":["oleg@example.com"],
-          "seen":["lissan@example.com"],
-          "messages":{}
-          }
 
-x = mycol.insert_one(mydict)
+# mydict = {"name": "lissan", 
+#           "email": "lissan@example.com",
+#           "pfp":"lissan.png",
+#           "bio":"I am a cool guy",
+#           "year": "1",
+#           "course": "Computer Science",
+#           "pictures":["pic1.png", "pic2.png", "pic3.png"],
+#           "gender":"male",
+#           "who-liked-them":["oleg@example.com"],
+#           "seen":["lissan@example.com"],
+#           "messages":{}
+#           }
 
+# x = mycol.insert_one(mydict)
+
+# print("inserted")
+# print(x.inserted_id)
 
 places_for_dates = {
    "kcl.ac.uk": [{"Strand Campus":0.9, "Waterloo Campus":0.4, "Guy's Campus":0.6, "Denmark Hill Campus":0.7}],
@@ -134,8 +135,6 @@ places_for_dates = {
 }
 
 
-print("inserted")
-print(x.inserted_id)
 
 
 def check_email_exists(email):
@@ -153,6 +152,23 @@ def check_email_exists(email):
 
 def insert_user_db(user_info):
     mydict = user_info
+    mydict["messages"] = {}
+    mydict["pictures"] = []
+    mydict["who-liked-them"] = []
+    mydict["seen"] = []
+
+
+# mydict = {"name": "lissan", 
+#           "email": "lissan@example.com",
+#           "pfp":"lissan.png",
+#           "bio":"I am a cool guy",
+#           "year": "1",
+#           "course": "Computer Science",
+#           "pictures":["pic1.png", "pic2.png", "pic3.png"],
+#           "gender":"male",
+#           "who-liked-them":["oleg@example.com"],
+#           "seen":["lissan@example.com"],
+#           "messages":{}
 
     # check user exists
     if not check_email_exists(user_info["email"]):
@@ -169,10 +185,17 @@ def add_user():
     print(request.args)
     data = request.get_json()
 
-    print(data)
-    insert_user_db(data)
+    email = data["email"]
+    domain = email.split("@")[1]
+    if domain.endswith("ac.uk"):
 
-    return "OK"
+        print(data)
+        insert_user_db(data)
+
+        return "OK"
+    
+    print("You are not a student, use university email ending ac.uk")
+    return "You are not a student, use university email ending ac.uk"
 
 
 @app.route("/get-user-info", methods=["GET"])
@@ -180,11 +203,32 @@ def get_user_info():
     email = request.args.get("email")
     
     user = mycol.find({"email": email})
+    print(user)
     for i in user:
       print(i)
-      return {"users": str(i)}
+      del i["_id"] # so it doesn't have to steralize the object, we delete the object
+      return json.dumps({"users": i})
     else:
       return "User not found"
+    
+@app.route("/update-user-info", methods=["POST"])
+def update_user_info():
+    data = request.get_json()
+    print("data", data)
+
+    email = data["email"]
+
+    # check if user exists
+    response = requests.get("http://lissan.dev:8050/get-user-info?email=" + email).text
+    if response == "User not found":
+       response = requests.post("http://lissan.dev:8050/add-user", json=data).text
+       if response == "You are not a student, use university email ending ac.uk":
+          return "You are not a student", 403
+       return "Ok", 200
+
+    mycol.update_one({"email": email}, {"$set": data})
+    return "OK", 200
+
 
 
 @app.route("/messages", methods=["GET"])
@@ -201,7 +245,7 @@ def get_messages():
            # sort all the messages by date time
            # [("14:20", "this is the message",True),("14:21", "recieved this message",False)]
 
-           return {"messages": all_messages}
+           return json.dumps({"messages": all_messages})
 
     return "404"
 
@@ -230,6 +274,7 @@ def send_message():
                     print("did 1")
         else:
             existing_messages = messages
+            print("existing_messages", existing_messages)
             existing_messages[other] = [[str(datetime.now().strftime('%H:%M')), sent_message, True]]
             mycol.update_one({"email": user}, {"$set": {"messages": existing_messages}})
             did_something = True
@@ -250,6 +295,7 @@ def send_message():
         else:
             existing_messages = messages
             existing_messages[user] = [[str(datetime.now().strftime('%H:%M')), sent_message, False]]
+            mycol.update_one({"email": other}, {"$set": {"messages": existing_messages}})
             did_something = True
            
         
@@ -274,11 +320,11 @@ def contact_list():
         user = mycol.find({"email": email})
         print(user)
         for i in user:
-            contact_list.append([email, i["name"], i["profile-pic"]])
+            contact_list.append([email, i["name"], i["pfp"]])
 
-      return {"contact_list": contact_list}
+      return json.dumps({"contact_list": contact_list})
 
-    return "404"
+    return json.dumps({"contact_list": []})
 
 
 #
@@ -298,17 +344,80 @@ def give_me_email():
     jwt_code = request.args.get("jwt")
     decoded_jwt = jwt.decode(jwt_code, options={"verify_signature": False})
     print(decoded_jwt)
-    return decoded_jwt["email"]
+    return json.dumps({"email":decoded_jwt["email"]})
 
 
-@app.route("/upload-image", methods=["POST"])
-def upload_image():
-    print(request.files)
+@app.route('/upload-pfp', methods=['POST'])
+def upload_file():
+    email = request.args.get("email")
+    print(email)
+
+    if 'file' not in request.files:
+        return 'No file part', 400
     file = request.files['file']
-    print(file)
-    file.save("media/" + file.filename)
-    return "OK"
+    if file.filename == '':
+        return 'No selected file', 400 
+    if file:
+        filename = str(datetime.now()) + "-" + email.split("@")[0] + "-pfp.png"
+        file.save(os.path.join("media/", filename))
 
+        mycol.update_one({"email": email}, {"$set": {"pfp": filename}})
+
+        return json.dumps({"filename":filename})
+
+
+
+@app.route("/recommendations", methods=["GET"])
+def recommendations():
+    email = request.args.get("email")
+    users = mycol.find()
+    all_emails = []
+    for user in users:
+       all_emails.append(user["email"])
+    all_emails.remove(email) # remove yourself
+
+    print(all_emails)
+
+    users = mycol.find({"email": email})
+    for user in users:
+        disliked = user["disliked"]
+        print("disliked", disliked)
+        for email in disliked:
+            print("email", email[0])
+            all_emails.remove(email[0])
+
+    return str(all_emails)
+
+
+
+@app.route("/i-like", methods=["GET"])
+def i_like():
+    who_liked = request.args.get("email")
+
+    liked = request.args.get("liked")
+
+    liked_user = mycol.find({"email": liked})
+    for i in liked_user:
+       liked = i["who-liked-them"]
+       liked.append(who_liked)
+       
+    mycol.update_one({"email": liked}, {"$push": {"who-liked-them": liked}})
+
+
+@app.route("/disliked", methods=["GET"])
+def disliked():
+    email = request.args.get("email")
+    
+    disliked = request.args.get("disliked")
+
+    user = mycol.find({"email": email})
+    for i in user:
+       disliked_list = i["disliked"]
+       disliked_list.append(disliked)
+
+    mycol.update_one({"email": email}, {"$push": {"disliked": disliked_list}})
+
+    return "OK"
 
 
 # app.run(host='0.0.0.0', port=8050, debug=False)
