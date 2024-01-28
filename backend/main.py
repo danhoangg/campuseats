@@ -88,7 +88,7 @@ def handle_disconnect():
 
 
 
-myclient = pymongo.MongoClient("mongodb+srv://admin:admin@dating-app.5bmxqgt.mongodb.net/?retryWrites=true&w=majority")
+myclient = pymongo.MongoClient("mongodburlhere")
 print("this")
 
 mydb = myclient["dating-app"]
