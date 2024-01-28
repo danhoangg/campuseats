@@ -6,10 +6,12 @@ import Navbar from "./NavBar";
 import ChatContainer from "./ChatContainer";
 import Login from './Login';
 import Profile from './Profile';
+import Matching from './Matching';
 
 function App() {
   const ProtectedChatContainer = withAuthenticationRequired(ChatContainer, {});
   const ProtectedProfile = withAuthenticationRequired(Profile, {});
+  const ProtectedMatching = withAuthenticationRequired(Matching, {});
 
   return (
     <Router>
@@ -17,9 +19,9 @@ function App() {
         <Navbar />
         <Routes>
           <Route exact path="/matches" element={<ProtectedChatContainer />} />
-          <Route exact path="/matching" element={<p>hi</p>} />
           <Route exact path="/login" element={<Login />} />
           <Route exact path="/profile" element={<ProtectedProfile />} />
+          <Route exact path="/matching" element={<ProtectedMatching />} />
         </Routes>
       </div>
     </Router>

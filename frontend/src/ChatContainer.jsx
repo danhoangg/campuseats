@@ -31,6 +31,7 @@ const ChatContainer = () => {
     const [messages, setMessages] = useState([])
     const [currentMessage, setCurrentMessage] = useState('')
     const [contacts, setContacts] = useState([])
+    const [trigger, setTrigger] = useState(false)
 
     useEffect(() => {
         if (user == '') return;
@@ -45,7 +46,17 @@ const ChatContainer = () => {
         fetch(`http://lissan.dev:8050/messages?user=${user}&other=${receiver}`)
             .then(res => res.json())
             .then(data => setMessages(data.messages))
-    }, [selected, user])
+    }, [selected, user, trigger])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTrigger(prevTrigger => !prevTrigger)
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
 
     const endOfListRef = useRef(null);
     const scrollToBottom = () => {
