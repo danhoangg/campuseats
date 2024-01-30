@@ -4,7 +4,7 @@ import LogoutButton from './LogoutButton';
 
 const Navbar = () => {
     return (
-        <nav className="bg-red-400 text-white shadow-lg top-0 sticky">
+        <nav className="bg-red-500 text-white shadow-lg top-0 sticky">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
@@ -22,13 +22,6 @@ const Navbar = () => {
                     </div>
                     <div className='flex items-center'>
                         <LogoutButton />
-                    </div>
-                    {/* Mobile menu button */}
-                    <div className="mr-2 flex md:hidden">
-                        <button type="button" className="bg-gray-900 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700">
-                            {/* Icon for menu button */}
-                            <span>Menu</span>
-                        </button>
                     </div>
                 </div>
             </div>

@@ -6,6 +6,7 @@ const Profile = () => {
     const [idToken, setIdToken] = useState('');
     const [user, setUser] = useState('');
     const [fetchedData, setFetchedData] = useState({})
+    const [trigger, setTrigger] = useState(false)
 
     useEffect(() => {
         const fetchIdToken = async () => {
@@ -22,17 +23,17 @@ const Profile = () => {
 
     useEffect(() => {
         if (idToken == '') return;
-        fetch(`http://lissan.dev:8050/give-me-email?jwt=${idToken}`)
+        fetch(`https://backend.unimatch.lissan.dev/give-me-email?jwt=${idToken}`)
             .then(data => data.json())
             .then(data => setUser(data.email))
     }, [idToken])
 
     useEffect(() => {
         if (user == '') return;
-        fetch(`http://lissan.dev:8050/get-user-info?email=${user}`)
+        fetch(`https://backend.unimatch.lissan.dev/get-user-info?email=${user}`)
             .then(res => res.json())
             .then(data => setFetchedData(data.users))
-    }, [user])
+    }, [user, trigger])
 
     const [data, setData] = useState({})
 
@@ -56,7 +57,7 @@ const Profile = () => {
     }
 
     const handleSubmit = () => {
-        fetch(`http://lissan.dev:8050/update-user-info`, {
+        fetch(`https://backend.unimatch.lissan.dev/update-user-info`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -76,10 +77,11 @@ const Profile = () => {
     const handleImgUpload = (e) => {
         const formData = new FormData();
         formData.append('file', img);
-        fetch(`http://lissan.dev:8050/upload-pfp?email=${user}`, {
+        fetch(`https://backend.unimatch.lissan.dev/upload-pfp?email=${user}`, {
             method: 'POST',
             body: formData
         })
+        .then(setTrigger(prev => !prev))
     }
 
     const handleImgSelect = (e) => {
@@ -90,7 +92,7 @@ const Profile = () => {
         <div className='flex justify-center items-center' style={{ height: `calc(100vh - 4rem)` }}>
             <div className='flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4'>
                 <div>
-                    <img src={`http://lissan.dev:8050/media/${data.pfp}`} alt="pfp" className='w-80 h-80 object-cover rounded-2xl' />
+                    <img src={data.pfp ? `https://backend.unimatch.lissan.dev/media/${data.pfp}` : 'http://backend.unimatch.lissan.dev/media/default.png'} alt="pfp" className='w-80 h-80 object-cover rounded-2xl' />
                     <input className='my-10' type="file" name='filename' accept='image/png, image/jpg, image/jpeg' onChange={handleImgSelect} />
                     <br />
                     <button className='bg-red-400 text-white rounded-lg px-4 py-2' onClick={handleImgUpload}>Upload</button>

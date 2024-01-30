@@ -22,7 +22,7 @@ const ChatContainer = () => {
     }, [getIdTokenClaims]);
 
     useEffect(() => {
-        fetch(`http://lissan.dev:8050/give-me-email?jwt=${idToken}`)
+        fetch(`https://backend.unimatch.lissan.dev/give-me-email?jwt=${idToken}`)
             .then(res => res.json())
             .then(res => setUser(res.email))
     }, [idToken])
@@ -35,7 +35,7 @@ const ChatContainer = () => {
 
     useEffect(() => {
         if (user == '') return;
-        fetch(`http://lissan.dev:8050/contact-list?user=${user}`)
+        fetch(`https://backend.unimatch.lissan.dev/contact-list?user=${user}`)
             .then(res => res.json())
             .then(data => setContacts(data.contact_list))
     }, [user])
@@ -43,7 +43,7 @@ const ChatContainer = () => {
     useEffect(() => {
         if (selected == null || user == '') return;
         let receiver = contacts[selected][0]
-        fetch(`http://lissan.dev:8050/messages?user=${user}&other=${receiver}`)
+        fetch(`https://backend.unimatch.lissan.dev/messages?user=${user}&other=${receiver}`)
             .then(res => res.json())
             .then(data => setMessages(data.messages))
     }, [selected, user, trigger])
@@ -76,7 +76,7 @@ const ChatContainer = () => {
         if (selected == null) return;
         if (e.key == "Enter") {
             let receiver = contacts[selected][0]
-            fetch(`http://lissan.dev:8050/send-message?user=${user}&other=${receiver}&message=${currentMessage}`)
+            fetch(`https://backend.unimatch.lissan.dev/send-message?user=${user}&other=${receiver}&message=${currentMessage}`)
             setCurrentMessage('')
         }
     }
@@ -87,7 +87,7 @@ const ChatContainer = () => {
             <div className="w-1/4 bg-gray-200 overflow-y-auto">
                 {contacts.length > 0 && (
                     contacts.map((contact, i) => {
-                        return <Contact id={i} key={i} email={contact[0]} selected={selected === i} onSelect={handleSelect} name={contact[1]} pfp={"http://lissan.dev:8050/media/" + contact[2]} />
+                        return <Contact id={i} key={i} email={contact[0]} selected={selected === i} onSelect={handleSelect} name={contact[1]} pfp={"https://backend.unimatch.lissan.dev/media/" + contact[2]} />
                     })
                 )}
                 {/* More contacts */}
