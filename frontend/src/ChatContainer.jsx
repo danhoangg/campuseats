@@ -111,7 +111,7 @@ const ChatContainer = () => {
                 </button>
             </div>
 
-            <div className={`${isContactsVisible ? 'md:w-3/4 hidden' : 'w-full flex'} bg-white px-4 flex-col md:flex`}>
+            <div className={`${isContactsVisible ? 'md:w-3/4 hidden' : 'w-full flex'} bg-white px-4 pb-4 flex-col md:flex`}>
                 <div className="overflow-y-auto flex-grow">
                     {messages.map((m, i) => (
                         <Message key={i} text={m[1]} sender={m[2]} time={m[0]}/>
