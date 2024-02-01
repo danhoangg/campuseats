@@ -3,6 +3,10 @@ import Contact from './Contact';
 import Message from './Message';
 import { useAuth0 } from '@auth0/auth0-react';
 
+import { SlArrowLeft, SlArrowRight } from "react-icons/sl";
+import './index.css';
+
+
 const ChatContainer = () => {
     const { getIdTokenClaims } = useAuth0();
     const [idToken, setIdToken] = useState('');
@@ -80,37 +84,55 @@ const ChatContainer = () => {
             setCurrentMessage('')
         }
     }
+    
+    const [isContactsVisible, setIsContactsVisible] = useState(true);
+
+    const toggleContacts = () => {
+        setIsContactsVisible(!isContactsVisible);
+    };
 
     return (
-        <div className="flex mx-auto" style={{ height: `calc(100vh - 4rem)` }}>
-            {/* Contacts Section */}
-            <div className="w-1/4 bg-gray-200 overflow-y-auto">
-                {contacts.length > 0 && (
+        <div className="flex mx-auto relative" style={{ height: `calc(100vh - 4rem)` }}>
+            <div className={`${isContactsVisible ? 'md:w-1/4 w-screen' : 'hidden'}  bg-gray-200 overflow-y-auto`}>
+            {contacts.length > 0 && (
                     contacts.map((contact, i) => {
                         return <Contact id={i} key={i} email={contact[0]} selected={selected === i} onSelect={handleSelect} name={contact[1]} pfp={"https://backend.unimatch.lissan.dev/media/" + contact[2]} />
                     })
                 )}
-                {/* More contacts */}
             </div>
 
-            {/* Chat Section */}
-            <div className="w-3/4 bg-white p-4 flex flex-col">
-                {/* Chat messages */}
+            <div className={`flex items-center`} style={{ height: `calc(100vh - 4rem)` }}>
+                <button 
+                    onClick={toggleContacts}
+                    className={`bg-gray-600 text-white p-3 rounded-full shadow-lg ${isContactsVisible ? '-translate-x-12' : 'translate-x-2'} absolute`}
+                    style={{ zIndex: 10 }}
+                >
+                    {isContactsVisible ? <SlArrowLeft /> : <SlArrowRight />}
+                </button>
+            </div>
+
+            <div className={`${isContactsVisible ? 'md:w-3/4 hidden' : 'w-full flex'} bg-white px-4 flex-col md:flex`}>
                 <div className="overflow-y-auto flex-grow">
-                    
-                    {messages.map((m, i) => {
-                        return <Message key={i} text={m[1]} sender={m[2]} time={m[0]}/>
-                    })}
-                     <div ref={endOfListRef} />
+                    {messages.map((m, i) => (
+                        <Message key={i} text={m[1]} sender={m[2]} time={m[0]}/>
+                    ))}
+                    <div ref={endOfListRef} />
                 </div>
 
-                {/* Message Input */}
                 <div className="mt-4">
-                    <input type="text" className="border p-2 w-full" placeholder="Type a message..." value={currentMessage} onChange={handleChange} onKeyDown={keyDown}/>
+                    <input 
+                        type="text" 
+                        className="border p-2 w-full" 
+                        placeholder="Type a message..." 
+                        value={currentMessage} 
+                        onChange={handleChange} 
+                        onKeyDown={keyDown}
+                    />
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default ChatContainer;
